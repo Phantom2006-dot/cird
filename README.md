@@ -15,15 +15,15 @@ There is no custom training. Two pre-trained models do the work:
 
 ## Download (full project with models)
 
-The model files are too large for a normal git commit (GitHub's limit is 100 MB per file),
-so the complete project, **including both models**, is attached to the
-[latest release](https://github.com/Phantom2006-dot/cird/releases/latest):
+The model files are too big for GitHub's 100 MB file limit, so they are not in
+`models/` here. Get the complete, ready-to-run project in one of these ways:
 
-**[circuit_identification.zip (353 MB)](https://github.com/Phantom2006-dot/cird/releases/latest/download/circuit_identification.zip)**
-SHA-256: `4ef5e88f3d91b18a6010f15fd850a0f899510b6d426d88c0b23affbae8d39d11`
-
-If you clone this repo instead, put `yolov8s-worldv2.pt` and `ViT-B-32.pt` into `models/`.
-Both are also attached to the release as separate files.
+- **Full zip (353 MB, includes both models):** it is in [`full_zip/`](full_zip),
+  split into 4 parts. Download them and double-click `JOIN_PARTS_WINDOWS.bat`
+  (or run `python join_parts.py`). The joined file is the exact original zip.
+- **Models only:** if you cloned this repo, download `yolov8s-worldv2.pt` from
+  https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8s-worldv2.pt
+  and `ViT-B-32.pt` from the CLIP link below, and put both in `models/`.
 
 ## Setup
 
