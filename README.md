@@ -18,7 +18,10 @@ There is no custom training. Two pre-trained models do the work:
 The model files are too big for GitHub's 100 MB file limit, so they are not in
 `models/` here. Get the complete, ready-to-run project in one of these ways:
 
-- **Full zip (353 MB, includes both models):** it is in [`full_zip/`](full_zip),
+- **Full zip, one file (353 MB, includes both models):**
+  **[Download circuit_identification.zip](https://github.com/Phantom2006-dot/cird/releases/latest/download/circuit_identification.zip)**
+  (from the [Releases](https://github.com/Phantom2006-dot/cird/releases) page).
+- **Same zip in parts:** it is in [`full_zip/`](full_zip),
   split into 4 parts. Download them and double-click `JOIN_PARTS_WINDOWS.bat`
   (or run `python join_parts.py`). The joined file is the exact original zip.
 - **Models only:** if you cloned this repo, download `yolov8s-worldv2.pt` from

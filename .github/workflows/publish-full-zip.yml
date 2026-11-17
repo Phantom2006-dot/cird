@@ -1,0 +1,38 @@
+# Joins full_zip/circuit_identification.zip.001-004 back into the single
+# 353 MB circuit_identification.zip and publishes it as a GitHub Release asset
+# (Releases allow files up to 2 GB; normal git files are limited to 100 MB).
+name: Publish full zip as release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "full_zip/**"
+      - ".github/workflows/publish-full-zip.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Join parts and verify checksum
+        run: |
+          cat full_zip/circuit_identification.zip.00{1,2,3,4} > circuit_identification.zip
+          echo "4ef5e88f3d91b18a6010f15fd850a0f899510b6d426d88c0b23affbae8d39d11  circuit_identification.zip" | sha256sum -c -
+          unzip -tq circuit_identification.zip
+          ls -l circuit_identification.zip
+
+      - name: Publish release v1.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete v1.0 --yes --cleanup-tag 2>/dev/null || true
+          gh release create v1.0 circuit_identification.zip \
+            --target "${GITHUB_SHA}" \
+            --title "Circuit identification v1.0 (full zip with models)" \
+            --notes "Complete ready-to-run project including the YOLO-World and CLIP models (353 MB). SHA-256: 4ef5e88f3d91b18a6010f15fd850a0f899510b6d426d88c0b23affbae8d39d11"
