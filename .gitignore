@@ -1,0 +1,4 @@
+models/*.pt
+weights/
+__pycache__/
+_selftest_out.jpg
