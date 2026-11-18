@@ -56,13 +56,17 @@ COLORS = {
 def prepare_clip_cache():
     """Make every `clip.load("ViT-B/32")` call, including the one Ultralytics
     makes inside set_classes(), use the bundled models/ViT-B-32.pt directly
-    (no copying, no download). If the file is missing, point the download at
-    the working URL instead of the dead azureedge one."""
+    (no copying). If the file is missing, download it once into models/
+    from the working URL (the old azureedge one is dead)."""
     import clip as clip_pkg
     from clip import clip  # the submodule holds _MODELS
     clip._MODELS["ViT-B/32"] = CLIP_URL
     if not os.path.exists(CLIP_PATH):
-        return "ViT-B/32"  # will download from CLIP_URL
+        # Download ONCE into models/ (clip._download checks the SHA-256).
+        # Otherwise Ultralytics and the relabelling step would each download
+        # their own copy into two different cache folders.
+        print("CLIP model not found in models/, downloading it once (338 MB)...")
+        clip._download(CLIP_URL, os.path.dirname(CLIP_PATH))
     if not getattr(clip.load, "_bundled", False):
         original = clip.load
 
