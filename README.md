@@ -41,7 +41,28 @@ If you need to download CLIP yourself, note that the old
 https://openaipublic.blob.core.windows.net/clip/models/40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af/ViT-B-32.pt
 The script also points the `clip` package at this URL.
 
-## Run
+## Desktop app (GUI)
+
+```bash
+python gui.py                      # open the app
+python gui.py real_test/real3.jpg  # open it with a photo already loaded
+```
+
+1. Wait until the status bar says **Ready**. The AI models load once at
+   start, which takes 20–60 s.
+2. Click **Open Image...** and choose a circuit photo.
+3. Click **Identify**. Boxes appear on the photo, with a summary table and a
+   list of every detection on the right. Click a row to highlight that part
+   in pink.
+4. Drag **Min score** to hide low-confidence guesses. This is instant and
+   doesn't re-run the detection.
+5. Click **Save Result...** to save the labelled image plus a `.csv` list of the parts.
+
+In PyCharm, right-click `gui.py` and choose **Run 'gui'**.
+Tkinter is included with Python on Windows and macOS. On Linux, install it
+with `sudo apt install python3-tk`.
+
+## Command line
 
 ```bash
 python identify_circuit.py                    # uses sample_circuit.jpg
