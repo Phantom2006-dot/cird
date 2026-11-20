@@ -1,13 +1,17 @@
-"""Draw a synthetic sample circuit image (sample_circuit.jpg).
+"""Draw synthetic circuit images.
 
-The detector works best on real photos; this image exists so the project
-can be demonstrated out of the box. Replace it with your own photo.
+    sample_circuit.jpg               the working circuit (also the "known-good" photo)
+    fault_test/fault_cut_wire.jpg    same circuit, but the battery's red wire is cut
+    fault_test/fault_missing_led.jpg same circuit, but the green LED is missing
+
+The detector works best on real photos; these images exist so the project
+can be demonstrated out of the box. Replace them with your own photos.
 """
+import os
 import random
 from PIL import Image, ImageDraw, ImageFilter
 
 W, H = 1280, 860
-random.seed(3)
 
 
 def breadboard(d, x0, y0, x1, y1):
@@ -85,29 +89,38 @@ def diode(d, x, y):
     d.rectangle([x + 92, y - 11, x + 100, y + 11], fill=(210, 210, 210))
 
 
-def battery(d, x, y):
+def battery(d, x, y, cut_wire=False):
     d.rounded_rectangle([x, y, x + 140, y + 230], 10, fill=(20, 20, 20))
     d.rectangle([x, y + 120, x + 140, y + 230], fill=(205, 130, 20))
     d.rectangle([x + 25, y - 18, x + 55, y], fill=(180, 180, 180))
     d.ellipse([x + 80, y - 20, x + 115, y + 2], fill=(180, 180, 180))
     d.text((x + 45, y + 60), "9V", fill=(240, 240, 240))
-    d.line([x + 40, y - 18, x + 40, y - 60, 360, y - 60], fill=(200, 30, 30), width=5)
+    if cut_wire:   # red wire broken: a gap with frayed copper ends
+        d.line([x + 40, y - 18, x + 40, y - 60, 190, y - 60], fill=(200, 30, 30), width=5)
+        d.line([235, y - 60, 360, y - 60], fill=(200, 30, 30), width=5)
+        for dy in (-4, 0, 4):
+            d.line([190, y - 60, 199, y - 60 + dy * 2], fill=(205, 127, 50), width=1)
+            d.line([235, y - 60, 226, y - 60 + dy * 2], fill=(205, 127, 50), width=1)
+    else:
+        d.line([x + 40, y - 18, x + 40, y - 60, 360, y - 60], fill=(200, 30, 30), width=5)
     d.line([x + 97, y - 18, x + 97, y - 40, 360, y - 40], fill=(20, 20, 20), width=5)
 
 
-def main(path="sample_circuit.jpg"):
+def draw_circuit(path, cut_wire=False, missing_led=False):
+    random.seed(3)   # same desk texture every time, so only the fault differs
     img = Image.new("RGB", (W, H), (120, 98, 72))
     d = ImageDraw.Draw(img)
     for _ in range(4000):  # wood-ish desk texture
         x, y = random.randrange(W), random.randrange(H)
         d.line([x, y, x + random.randint(20, 80), y], fill=(110 + random.randint(-12, 12), 88, 62))
     breadboard(d, 340, 120, 1240, 760)
-    battery(d, 60, 420)
+    battery(d, 60, 420, cut_wire=cut_wire)
     resistor(d, 420, 260)
     resistor(d, 640, 260)
     resistor(d, 1040, 520, vertical=True)
     led(d, 900, 280, (230, 30, 30))
-    led(d, 990, 280, (30, 200, 60))
+    if not missing_led:
+        led(d, 990, 280, (30, 200, 60))
     capacitor(d, 470, 470)
     ic_chip(d, 620, 410)
     transistor(d, 900, 520)
@@ -115,6 +128,14 @@ def main(path="sample_circuit.jpg"):
     img = img.filter(ImageFilter.GaussianBlur(0.8))
     img.save(path, quality=92)
     print(f"Saved {path}")
+
+
+def main():
+    here = os.path.dirname(os.path.abspath(__file__))
+    os.makedirs(os.path.join(here, "fault_test"), exist_ok=True)
+    draw_circuit(os.path.join(here, "sample_circuit.jpg"))
+    draw_circuit(os.path.join(here, "fault_test", "fault_cut_wire.jpg"), cut_wire=True)
+    draw_circuit(os.path.join(here, "fault_test", "fault_missing_led.jpg"), missing_led=True)
 
 
 if __name__ == "__main__":

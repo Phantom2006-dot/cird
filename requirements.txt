@@ -3,3 +3,4 @@ torch
 torchvision
 pillow
 git+https://github.com/ultralytics/CLIP.git
+opencv-python

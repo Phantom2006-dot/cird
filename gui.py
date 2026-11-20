@@ -105,6 +105,9 @@ class App:
         self.btn_save = ttk.Button(bar, text="Save Result...", command=self.save_result,
                                    state="disabled")
         self.btn_save.pack(side="left")
+        self.btn_trouble = ttk.Button(bar, text="Troubleshoot...", command=self.run_troubleshoot,
+                                      state="disabled")
+        self.btn_trouble.pack(side="left", padx=6)
 
         ttk.Label(bar, text="   Min score:").pack(side="left")
         self.min_score = tk.DoubleVar(value=0.20)
@@ -168,6 +171,14 @@ class App:
         except Exception as e:
             self.events.put(("error", f"Identification failed:\n\n{e}"))
 
+    def _troubleshoot(self, good, checked):
+        try:
+            from troubleshoot import troubleshoot
+            result = troubleshoot(good, checked, self.identifier)
+            self.events.put(("troubleshot", (good, result)))
+        except Exception as e:
+            self.events.put(("error", f"Troubleshooting failed:\n\n{e}"))
+
     def _poll(self):
         """Tkinter isn't thread-safe: workers post events, the GUI thread handles them."""
         try:
@@ -188,6 +199,11 @@ class App:
                         self._set_status(f"Found {len(self.all_dets)} part(s) in {secs:.1f} s. "
                                          f"{os.path.basename(path)}")
                     self._update_buttons()
+                    if getattr(self, "on_detected", None):
+                        self.on_detected()
+                elif kind == "troubleshot":
+                    self.busy = False
+                    self._show_faults(*data)
                     if getattr(self, "on_detected", None):
                         self.on_detected()
                 elif kind == "error":
@@ -230,6 +246,35 @@ class App:
         self._update_buttons()
         self._set_status("Identifying components...")
         threading.Thread(target=self._detect, args=(self.image_path,), daemon=True).start()
+
+    def run_troubleshoot(self, good=None):
+        """Compare the open photo with a photo of the working circuit."""
+        if not (self.identifier and self.image_path) or self.busy:
+            return
+        if good is None:
+            messagebox.showinfo("Troubleshoot", "Now choose a photo of the WORKING circuit, "
+                                "taken from the same position as the open photo.")
+            good = filedialog.askopenfilename(title="Photo of the WORKING circuit",
+                                              filetypes=IMAGE_TYPES, initialdir=HERE)
+            if not good:
+                return
+        self.busy = True
+        self._update_buttons()
+        self._set_status("Troubleshooting: comparing with the working circuit...")
+        threading.Thread(target=self._troubleshoot, args=(good, self.image_path),
+                         daemon=True).start()
+
+    def _show_faults(self, good, result):
+        faults, _before, _after, marked = result
+        self.open_image(marked)                      # show the photo with the red fault boxes
+        self.summary.insert("", "end", text="Faults found", values=(len(faults), ""))
+        for i, f in enumerate(faults, 1):
+            self.detlist.insert("", "end", values=(f"FAULT {i}: {f['text']}", ""))
+        text = ("No faults found: the circuit matches the working one." if not faults else
+                "\n".join(f"FAULT {i}: {f['text']}" for i, f in enumerate(faults, 1)))
+        self._set_status(f"Troubleshoot: {len(faults)} fault(s). Marked photo: {marked}")
+        if not getattr(self, "on_detected", None):  # no pop-up during automatic tests
+            messagebox.showinfo("Troubleshooting result", text)
 
     def save_result(self):
         if not self.image_path:
@@ -301,6 +346,7 @@ class App:
     def _update_buttons(self):
         ready = self.identifier is not None and self.image_path and not self.busy
         self.btn_identify.config(state="normal" if ready else "disabled")
+        self.btn_trouble.config(state="normal" if ready else "disabled")
         self.btn_save.config(state="normal" if self.all_dets and not self.busy else "disabled")
 
     def _set_status(self, text):
@@ -312,16 +358,21 @@ def main():
     p.add_argument("image", nargs="?", help="photo to open at start")
     p.add_argument("--autotest", metavar="SCREENSHOT",
                    help="(for testing) open the image, identify, save a screenshot, quit")
+    p.add_argument("--autotest-good", metavar="GOOD", help=argparse.SUPPRESS)
     a = p.parse_args()
 
     root = tk.Tk()
     app = App(root, a.image)
     if a.autotest:
         def ready():
-            app.run_identify()
+            if a.autotest_good:
+                app.run_troubleshoot(a.autotest_good)
+            else:
+                app.run_identify()
 
         def detected():
-            app.detlist.selection_set("0")   # highlight the first detection
+            if app.dets:
+                app.detlist.selection_set("0")   # highlight the first detection
             root.update()
             root.after(500, shoot)
 
@@ -330,9 +381,10 @@ def main():
             root.update()
             x, y = root.winfo_rootx(), root.winfo_rooty()
             ImageGrab.grab((x, y, x + root.winfo_width(), y + root.winfo_height())).save(a.autotest)
-            app.save_to(os.path.splitext(a.autotest)[0] + "_result.jpg")
-            print(f"AUTOTEST found={len(app.all_dets)} shown={len(app.dets)} "
-                  f"rows={len(app.detlist.get_children())}")
+            if app.dets:
+                app.save_to(os.path.splitext(a.autotest)[0] + "_result.jpg")
+            rows = [app.detlist.item(i)["values"][0] for i in app.detlist.get_children()]
+            print(f"AUTOTEST found={len(app.all_dets)} shown={len(app.dets)} rows={rows}")
             root.destroy()
 
         app.on_ready, app.on_detected = ready, detected

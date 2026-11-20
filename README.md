@@ -62,6 +62,35 @@ In PyCharm, right-click `gui.py` and choose **Run 'gui'**.
 Tkinter is included with Python on Windows and macOS. On Linux, install it
 with `sudo apt install python3-tk`.
 
+## Troubleshooting: find faults (cut wires, missing parts)
+
+`troubleshoot.py` compares a photo of the circuit with a photo of the same
+circuit **when it was working** (a "known-good" or "golden sample" photo, the
+method used in factory circuit inspection):
+
+1. It finds every spot where the two photos differ.
+2. If a part from the good photo is gone, it reports **"Missing component: LED"**
+   (the AI detector names the part).
+3. Any other change is reported as a **"Wire or connection fault (possible cut or loose wire)"**.
+4. It saves the checked photo with red boxes around each fault.
+
+```bash
+python troubleshoot.py --demo                             # check the two example faults
+python troubleshoot.py good.jpg checked.jpg               # your own photos
+python troubleshoot.py good.jpg checked.jpg --no-ai       # faster: find changes only
+python troubleshoot.py --test                             # self-test
+```
+
+In the app window: open the photo to check, click **Troubleshoot...**, then
+choose the photo of the working circuit.
+
+**Take both photos from the same position** (for example with the phone on a
+stand) and in similar light. Otherwise the whole picture counts as "changed".
+
+Example fault images, made by `make_sample.py`, are in `fault_test/`:
+`fault_cut_wire.jpg` (the battery's red wire is cut) and `fault_missing_led.jpg`
+(the green LED is missing). `sample_circuit.jpg` is the working circuit.
+
 ## Command line
 
 ```bash
